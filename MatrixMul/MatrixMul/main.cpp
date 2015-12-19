@@ -54,6 +54,52 @@ void print(mat A, corners a, char *name)
     }
     printf("}\n");
 }
+// C[c] = A[a] + B[b]
+void add(mat A, mat B, mat C, corners a, corners b, corners c)
+{
+    int rd = a.rb - a.ra;
+    int cd = a.cb - a.ca;
+    int i, j;
+    for (i = 0; i < rd; i++)
+    {
+        for (j = 0; j < cd; j++)
+        {
+            C[i + c.ra][j + c.ca] = A[i + a.ra][j + a.ca] + B[i + b.ra][j
+                    + b.ca];
+        }
+    }
+}
+ 
+// C[c] = A[a] - B[b]
+void sub(mat A, mat B, mat C, corners a, corners b, corners c)
+{
+    int rd = a.rb - a.ra;
+    int cd = a.cb - a.ca;
+    int i, j;
+    for (i = 0; i < rd; i++)
+    {
+        for (j = 0; j < cd; j++)
+        {
+            C[i + c.ra][j + c.ca] = A[i + a.ra][j + a.ca] - B[i + b.ra][j
+                    + b.ca];
+        }
+    }
+}
+// Return 1/4 of the matrix: top/bottom , left/right.
+void find_corner(corners a, int i, int j, corners *b)
+{
+    int rm = a.ra + (a.rb - a.ra) / 2;
+    int cm = a.ca + (a.cb - a.ca) / 2;
+    *b = a;
+    if (i == 0)
+        b->rb = rm; // top rows
+    else
+        b->ra = rm; // bot rows
+    if (j == 0)
+        b->cb = cm; // left cols
+    else
+        b->ca = cm; // right cols
+}
 int main()
 {
      mat A, B, C;
@@ -65,7 +111,7 @@ int main()
     randk(B, bi, 0, 3);
     print(A, ai, "A");
     print(B, bi, "B");
-    //set(C, ci, 0);
+    set(C, ci, 0);
     //mul(A, B, C, ai, bi, ci);
     //print(C, ci, "C");
 	getch();
