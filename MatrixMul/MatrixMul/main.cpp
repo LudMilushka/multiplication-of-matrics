@@ -1,97 +1,73 @@
 #include <iostream>
-#include <math.h>
 #include <conio.h>
-using namespace std;
+#include <assert.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+
+#define M 1
+#define N (1<<M)
+
+typedef double datatype;
+#define DATATYPE_FORMAT "%4.2g"
+typedef datatype mat[N][N];
+typedef struct
+{
+        int ra, rb, ca, cb;
+} corners;
+// set A[a] = I
+void identity(mat A, corners a)
+{
+    int i, j;
+    for (i = a.ra; i < a.rb; i++)
+        for (j = a.ca; j < a.cb; j++)
+            A[i][j] = (datatype) (i == j);
+}
+// set A[a] = k
+void set(mat A, corners a, datatype k)
+{
+    int i, j;
+    for (i = a.ra; i < a.rb; i++)
+        for (j = a.ca; j < a.cb; j++)
+            A[i][j] = k;
+}
+ 
+// set A[a] = [random(l..h)].
+void randk(mat A, corners a, double l, double h)
+{
+    int i, j;
+    for (i = a.ra; i < a.rb; i++)
+        for (j = a.ca; j < a.cb; j++)
+            A[i][j] = (datatype) (l + (h - l) * (rand() / (double) RAND_MAX));
+}
+ 
+// Print A[a]
+void print(mat A, corners a, char *name)
+{
+    int i, j;
+    printf("%s = {\n", name);
+    for (i = a.ra; i < a.rb; i++)
+    {
+        for (j = a.ca; j < a.cb; j++)
+            printf(DATATYPE_FORMAT ", ", A[i][j]);
+        printf("\n");
+    }
+    printf("}\n");
+}
 int main()
 {
-    int a[10][10], b[10][10],c[10][10];
-    int x,y,i,j,m,n;
- 
-    cout<<"\nEnter the number of rows and columns for Matrix A:::\n\n";
-    cin>>x>>y;
-    cout<<"\n\nEnter elements for Matrix A :::\n\n";
- 
-    for(i=0;i<x;i++)
-    {
-        for(j=0;j<y;j++)
-        {
-            cin>>a[i][j];
-        }
-        cout<<"\n";
-    }
-
-	cout<<"\n\nMatrix A :\n\n";
- 
-    for(i=0;i<x;i++)
-    {
-        for(j=0;j<y;j++)
-        {
-            cout<<"\t"<<a[i][j];
-        }
-        cout<<"\n\n";
-    }
- 
-    cout<<"\n-----------------------------------------------------------\n";
- 
-    cout<<"\nEnter the number of rows and columns for Matrix B:::\n\n";
-    cin>>m>>n;
-    
-    cout<<"\n\nEnter elements for Matrix B :::\n\n";
- 
-    for(i=0;i<m;i++)
-    {
-        for(j=0;j<n;j++)
-        {
-            cin>>b[i][j];
-        }
-        cout<<"\n";
-    }
- 
- 
-    cout<<"\n\nMatrix B :\n\n";
- 
-    for(i=0;i<m;i++)
-    {
-        for(j=0;j<n;j++)
-        {
-            cout<<"\t"<<b[i][j];
-        }
-        cout<<"\n\n";
-    }
- 
-    if(y==m)
-    {
- 
-        for(i=0;i<x;i++)
-        {
-            for(j=0;j<n;j++)
-            {
-                c[i][j]=0;
-                for(int k=0;k<m;k++)
-                {
-                    c[i][j]=c[i][j]+a[i][k]*b[k][j];
-                }
-            }
-        }
- 
-        cout<<"\n-----------------------------------------------------------\n";
- 
-        cout<<"\n\nMultiplication of Matrix A and Matrix B :\n\n";
- 
-        for(i=0;i<x;i++)
-        {
-            for(j=0;j<n;j++)
-            {
-                cout<<"\t"<<c[i][j];
-            }
-            cout<<"\n\n";
-        }
-    }
-    else
-    {
-        cout<<"\n\nMultiplication is not possible";
-    }
- 
-    getch();
+     mat A, B, C;
+    corners ai = { 0, N, 0, N };
+    corners bi = { 0, N, 0, N };
+    corners ci = { 0, N, 0, N };
+    srand(time(0));
+    randk(A, ai, 0, 3);
+    randk(B, bi, 0, 3);
+    print(A, ai, "A");
+    print(B, bi, "B");
+    //set(C, ci, 0);
+    //mul(A, B, C, ai, bi, ci);
+    //print(C, ci, "C");
+	getch();
     return 0;
 }
