@@ -1,217 +1,330 @@
 #include <iostream>
 #include <conio.h>
-#include <assert.h>
+#include <iomanip>
+#include <windows.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
+void create(int );
+int **subsum(int ,int **,int**,char);
+int **cal(int , int **,int**);
+using namespace std;
 
-#define M 1
-#define N (1<<M)
-
-typedef double datatype;
-#define DATATYPE_FORMAT "%4.2g"
-typedef datatype mat[N][N];
-typedef struct
+void main()
 {
-        int ra, rb, ca, cb;
-} corners;
-// set A[a] = I
-void identity(mat A, corners a)
-{
-    int i, j;
-    for (i = a.ra; i < a.rb; i++)
-        for (j = a.ca; j < a.cb; j++)
-            A[i][j] = (datatype) (i == j);
-}
-// set A[a] = k
-void set(mat A, corners a, datatype k)
-{
-    int i, j;
-    for (i = a.ra; i < a.rb; i++)
-        for (j = a.ca; j < a.cb; j++)
-            A[i][j] = k;
-}
- 
-// set A[a] = [random(l..h)].
-void randk(mat A, corners a, double l, double h)
-{
-    int i, j;
-    for (i = a.ra; i < a.rb; i++)
-        for (j = a.ca; j < a.cb; j++)
-            A[i][j] = (datatype) (l + (h - l) * (rand() / (double) RAND_MAX));
-}
- 
-// Print A[a]
-void print(mat A, corners a, char *name)
-{
-    int i, j;
-    printf("%s = {\n", name);
-    for (i = a.ra; i < a.rb; i++)
-    {
-        for (j = a.ca; j < a.cb; j++)
-            printf(DATATYPE_FORMAT ", ", A[i][j]);
-        printf("\n");
-    }
-    printf("}\n");
-}
-// C[c] = A[a] + B[b]
-void add(mat A, mat B, mat C, corners a, corners b, corners c)
-{
-    int rd = a.rb - a.ra;
-    int cd = a.cb - a.ca;
-    int i, j;
-    for (i = 0; i < rd; i++)
-    {
-        for (j = 0; j < cd; j++)
-        {
-            C[i + c.ra][j + c.ca] = A[i + a.ra][j + a.ca] + B[i + b.ra][j
-                    + b.ca];
-        }
-    }
-}
- 
-// C[c] = A[a] - B[b]
-void sub(mat A, mat B, mat C, corners a, corners b, corners c)
-{
-    int rd = a.rb - a.ra;
-    int cd = a.cb - a.ca;
-    int i, j;
-    for (i = 0; i < rd; i++)
-    {
-        for (j = 0; j < cd; j++)
-        {
-            C[i + c.ra][j + c.ca] = A[i + a.ra][j + a.ca] - B[i + b.ra][j
-                    + b.ca];
-        }
-    }
-}
-// Return 1/4 of the matrix: top/bottom , left/right.
-void find_corner(corners a, int i, int j, corners *b)
-{
-    int rm = a.ra + (a.rb - a.ra) / 2;
-    int cm = a.ca + (a.cb - a.ca) / 2;
-    *b = a;
-    if (i == 0)
-        b->rb = rm; // top rows
-    else
-        b->ra = rm; // bot rows
-    if (j == 0)
-        b->cb = cm; // left cols
-    else
-        b->ca = cm; // right cols
-}
-void mul(mat A, mat B, mat C, corners a, corners b, corners c)
-{
-    corners aii[2][2], bii[2][2], cii[2][2], p;
-    mat P[7], S, T;
-    int i, j, m, n, k;
- 
-    // Check: A[m n] * B[n k] = C[m k]
-    m = a.rb - a.ra;
-    assert(m==(c.rb-c.ra));
-    n = a.cb - a.ca;
-    assert(n==(b.rb-b.ra));
-    k = b.cb - b.ca;
-    assert(k==(c.cb-c.ca));
-    assert(m>0);
- 
-    if (n == 1)
-    {
-        C[c.ra][c.ca] += A[a.ra][a.ca] * B[b.ra][b.ca];
-        return;
-    }
- 
-    // Create the 12 smaller matrix indexes:
-    //  A00 A01   B00 B01   C00 C01
-    //  A10 A11   B10 B11   C10 C11
-    for (i = 0; i < 2; i++)
-    {
-        for (j = 0; j < 2; j++)
-        {
-            find_corner(a, i, j, &aii[i][j]);
-            find_corner(b, i, j, &bii[i][j]);
-            find_corner(c, i, j, &cii[i][j]);
-        }
-    }
- 
-    p.ra = p.ca = 0;
-    p.rb = p.cb = m / 2;
- 
-#define LEN(A) (sizeof(A)/sizeof(A[0]))
-    for (i = 0; i < LEN(P); i++)
-        set(P[i], p, 0);
- 
-#define ST0 set(S,p,0); set(T,p,0)
- 
-    // (A00 + A11) * (B00+B11) = S * T = P0
-    ST0;
-    add(A, A, S, aii[0][0], aii[1][1], p);
-    add(B, B, T, bii[0][0], bii[1][1], p);
-    mul(S, T, P[0], p, p, p);
- 
-    // (A10 + A11) * B00 = S * B00 = P1
-    ST0;
-    add(A, A, S, aii[1][0], aii[1][1], p);
-    mul(S, B, P[1], p, bii[0][0], p);
- 
-    // A00 * (B01 - B11) = A00 * T = P2
-    ST0;
-    sub(B, B, T, bii[0][1], bii[1][1], p);
-    mul(A, T, P[2], aii[0][0], p, p);
- 
-    // A11 * (B10 - B00) = A11 * T = P3
-    ST0;
-    sub(B, B, T, bii[1][0], bii[0][0], p);
-    mul(A, T, P[3], aii[1][1], p, p);
- 
-    // (A00 + A01) * B11 = S * B11 = P4
-    ST0;
-    add(A, A, S, aii[0][0], aii[0][1], p);
-    mul(S, B, P[4], p, bii[1][1], p);
- 
-    // (A10 - A00) * (B00 + B01) = S * T = P5
-    ST0;
-    sub(A, A, S, aii[1][0], aii[0][0], p);
-    add(B, B, T, bii[0][0], bii[0][1], p);
-    mul(S, T, P[5], p, p, p);
- 
-    // (A01 - A11) * (B10 + B11) = S * T = P6
-    ST0;
-    sub(A, A, S, aii[0][1], aii[1][1], p);
-    add(B, B, T, bii[1][0], bii[1][1], p);
-    mul(S, T, P[6], p, p, p);
- 
-    // P0 + P3 - P4 + P6 = S - P4 + P6 = T + P6 = C00
-    add(P[0], P[3], S, p, p, p);
-    sub(S, P[4], T, p, p, p);
-    add(T, P[6], C, p, p, cii[0][0]);
- 
-    // P2 + P4 = C01
-    add(P[2], P[4], C, p, p, cii[0][1]);
- 
-    // P1 + P3 = C10
-    add(P[1], P[3], C, p, p, cii[1][0]);
- 
-    // P0 + P2 - P1 + P5 = S - P1 + P5 = T + P5 = C11
-    add(P[0], P[2], S, p, p, p);
-    sub(S, P[1], T, p, p, p);
-    add(T, P[5], C, p, p, cii[1][1]);
- 
-}
-int main()
-{
-     mat A, B, C;
-    corners ai = { 0, N, 0, N };
-    corners bi = { 0, N, 0, N };
-    corners ci = { 0, N, 0, N };
-    srand(time(0));
-    randk(A, ai, 0, 3);
-    randk(B, bi, 0, 3);
-    print(A, ai, "A");
-    print(B, bi, "B");
-    set(C, ci, 0);
-    mul(A, B, C, ai, bi, ci);
-    print(C, ci, "C");
+	setlocale(LC_ALL, "Russian");
+	FILE *fin(NULL);
+	cout<<"================================= Ввод данных =================================\n";
+	fin = fopen("razm.txt","r"); 
+	cout<<"\nФайл razm.txt открыт. Чтение файла...\n";
+	int n ;
+	//cout<<"\n\nВведите размерность матриц (nxn) : ";
+	//cin>>n;
+	fscanf(fin,"%d",&n);
+	cout<<"\nЧтение завершено.\n";
+	create(n);
 	getch();
-    return 0;
+	fclose(fin);
+}
+
+void create(int n)
+{
+	FILE *fin1(NULL),*fin2(NULL),*fout(NULL);
+	int i,j;
+	int **s,**v,**c;
+	//cout<<"\nВведите элементы матрицы №1 : ";
+	fin1 = fopen("m1.txt","r");
+	cout<<"\nФайл m1.txt открыт. Чтение файла...\n";
+	s=new int*[n];
+	for(i=0;i<n;i++)
+		s[i]=new int[n];
+	for(i=0;i<n;i++)
+		for(j=0;j<n;j++)
+			fscanf(fin1,"%d",&s[i][j]);
+	cout<<"\nЧтение завершено.\n";
+	fclose(fin1);
+	//cout<<endl<<"Введите элементы матрицы №2 : ";
+	fin2 = fopen("m2.txt","r");
+	cout<<"\nФайл m2.txt открыт. Чтение файла...\n";
+	v=new int*[n];
+	for(i=0;i<n;i++)
+		v[i]=new int [n];
+	for(i=0;i<n;i++)
+		for(j=0;j<n;j++)
+			fscanf(fin2,"%d",&v[i][j]);
+	cout<<"\nЧтение завершено.\n";
+	fclose(fin2);
+	cout<<"\n=================================== Матрицы ===================================\n";
+	cout<<"\nРазмерность матриц : "<<n<<"x"<<n<<endl;
+	cout<<"\n\nМатрица №1 : \n\n";
+	for (int i = 0; i < n; i++)
+	{
+		for (int j = 0; j < n; j++)
+			cout <<setw(5)<<s[i][j];
+		cout << endl;
+	}
+
+	cout<<"\nМатрица №2 : \n\n";
+	for (int i = 0; i < n; i++)
+	{
+		for (int j = 0; j < n; j++)
+			cout <<setw(5)<< v[i][j] ;
+		cout << endl;
+	}
+
+	cout<<"\n================================ Ход решения ===================================";
+
+	c=new int*[n];
+	for(i=0;i<n;i++)
+		c[i]=new int [n];
+	for(i=0;i<n;i++)
+		for(j=0;j<n;j++)
+			c[i][j]=0;
+
+	cout<<"\nРезультат умножения:"<<endl;
+	c= cal(n,s,v);
+	for(i=0;i<n;i++) {
+		cout<<endl;
+		for(j=0;j<n;j++)
+			cout <<setw(10)<<c[i][j];}
+	fout=fopen("result.txt","w");
+	for(i=0;i<n;i++)
+	{
+		for(int j=0;j<n;j++)
+		{
+			fprintf(fout,"%10d",c[i][j]);
+		}
+		fprintf(fout,"%c",'\n');
+	}
+	cout<<"\n\n\nРезультат умножения будет записан в файл result.txt\n";
+
+
+}
+//**********************cal*******************
+int** cal(int n,int **s,int**v)
+{
+	int i,j,k,**c,t,**a11,**a12,**a21,**a22,**b11,**b12,**b21,**b22;
+	int **m1,**m2,**m3,**m4,**m5,**m6,**m7,**w,**p1,**p2;
+	c=new int*[n];
+	for(i=0;i<n;i++)
+		c[i]=new int [n];
+
+
+	if(n<=2){
+		for(i=0;i<n;i++)
+			for(j=0;j<n;j++) {
+				c[i][j]=0 ;
+				for(k=0;k<n;k++)
+					c[i][j]+=s[i][k]*v[k][j]; }
+			return c;     }
+	else {
+		t=n/2;
+		//*****************************a and b****************
+		a11=new int*[t];
+		for(i=0;i<t;i++)
+			a11[i]=new int [t];
+		for(i=0;i<t;i++)
+			for(j=0;j<t;j++)
+				a11[i][j]=s[i][j];
+
+		a12=new int*[t];
+		for(i=0;i<t;i++)
+			a12[i]=new int [t];
+		for(i=0;i<t;i++)
+			for(j=0;j<t;j++)
+				a12[i][j]=s[i][j+t];
+
+		a21=new int*[t];
+		for(i=0;i<t;i++)
+			a21[i]=new int [t];
+		for(i=0;i<t;i++)
+			for(j=0;j<t;j++)
+				a21[i][j]=s[i+t][j];
+
+		a22=new int*[t];
+		for(i=0;i<t;i++)
+			a22[i]=new int [t];
+		for(i=0;i<t;i++)
+			for(j=0;j<t;j++)
+				a22[i][j]=s[t+i][j+t];
+		//*************************************************
+
+		b11=new int*[t];
+		for(i=0;i<t;i++)
+			b11[i]=new int [t];
+		for(i=0;i<t;i++)
+			for(j=0;j<t;j++)
+				b11[i][j]=v[i][j];
+
+		b12=new int*[t];
+		for(i=0;i<t;i++)
+			b12[i]=new int [t];
+		for(i=0;i<t;i++)
+			for(j=0;j<t;j++)
+				b12[i][j]=v[i][j+t];
+
+		b21=new int*[t];
+		for(i=0;i<t;i++)
+			b21[i]=new int [t];
+		for(i=0;i<t;i++)
+			for(j=0;j<t;j++)
+				b21[i][j]=v[i+t][j];
+
+		b22=new int*[t];
+		for(i=0;i<t;i++)
+			b22[i]=new int [t];
+		for(i=0;i<t;i++)
+			for(j=0;j<t;j++)
+				b22[i][j]=v[t+i][j+t];
+
+
+		//*****************************m1-m7************************
+
+
+		m1=new int*[t];
+		for(i=0;i<t;i++)
+			m1[i]=new int[t];
+		for(i=0;i<t;i++)
+			for(j=0;j<t;j++)
+				m1[i][j]=0;
+
+		m2=new int*[t];
+		for(i=0;i<t;i++)
+			m2[i]=new int[t];
+		for(i=0;i<t;i++)
+			for(j=0;j<t;j++)
+				m2[i][j]=0;
+
+		m3=new int*[t];
+		for(i=0;i<t;i++)
+			m3[i]=new int[t];
+		for(i=0;i<t;i++)
+			for(j=0;j<t;j++)
+				m3[i][j]=0;
+
+		m4=new int*[t];
+		for(i=0;i<t;i++)
+			m4[i]=new int[t];
+		for(i=0;i<t;i++)
+			for(j=0;j<t;j++)
+				m4[i][j]=0;
+
+		m5=new int*[t];
+		for(i=0;i<t;i++)
+			m5[i]=new int[t];
+		for(i=0;i<t;i++)
+			for(j=0;j<t;j++)
+				m5[i][j]=0;
+
+		m6=new int*[t];
+		for(i=0;i<t;i++)
+			m6[i]=new int[t];
+		for(i=0;i<t;i++)
+			for(j=0;j<t;j++)
+				m6[i][j]=0;
+
+		m7=new int*[t];
+		for(i=0;i<t;i++)
+			m7[i]=new int[t];
+		for(i=0;i<t;i++)
+			for(j=0;j<t;j++)
+				m7[i][j]=0;
+
+
+		p1=new int*[t];
+		for(i=0;i<t;i++)
+			p1[i]=new int[t];
+		for(i=0;i<t;i++)
+			for(j=0;j<t;j++)
+				p1[i][j]=0;
+
+		p2=new int*[t];
+		for(i=0;i<t;i++)
+			p2[i]=new int[t];
+		for(i=0;i<t;i++)
+			for(j=0;j<t;j++)
+				p2[i][j]=0;
+		//**********************calculate m1-m7**********
+
+		p1=subsum(t,a11,a22,'d');
+		p2=subsum(t,b11,b22,'d');
+		m1=cal(t,p1,p2);
+
+		p1=subsum(t,a21,a22,'d');
+		m2=cal(t,p1,b11);
+
+		p1=subsum(t,b12,b22,'k');
+		m3=cal(t,a11,p1);
+
+		p1=subsum(t,b21,b11,'k');
+		m4=cal(t,a22,p1);
+
+		p1=subsum(t,a11,a12,'d');
+		m5=cal(t,p1,b22);
+
+		p1=subsum(t,a21,a11,'k');
+		p2=subsum(t,b11,b12,'d');
+		m6=cal(t,p1,p2);
+
+		p1=subsum(t,a12,a22,'k');
+		p2=subsum(t,b21,b22,'d');
+		m7=cal(t,p1,p2);
+
+
+		w=new int*[n];
+		for(i=0;i<n;i++)
+			w[i]=new int[n];
+		p1=subsum(t,m1,m4,'d');
+		p2=subsum(t,p1,m5,'k');
+		p2=subsum(t,p2,m7,'d');
+		for(i=0;i<t;i++)
+			for(j=0;j<t;j++){
+				w[i][j]=p2[i][j];}
+
+			p1=subsum(t,m3,m5,'d');
+			for(i=0;i<t;i++)
+				for(j=0;j<t;j++){
+					w[i][j+t]=p1[i][j];
+				}
+
+				p1=subsum(t,m2,m4,'d');
+				for(i=0;i<t;i++)
+					for(j=0;j<t;j++)
+						w[i+t][j]=p1[i][j];
+
+				p1=subsum(t,m1,m3,'d');
+				p2=subsum(t,p1,m2,'k');
+				p2=subsum(t,p2,m6,'d');
+				for(i=0;i<t;i++)
+					for(j=0;j<t;j++)
+						w[i+t][j+t]=p2[i][j];
+
+				return w;
+
+	}
+
+}
+
+//*********************sub and sum***************
+int**subsum(int n,int **s,int **v,char ch)
+{
+
+	int **m,i,j;
+	m=new int*[n];
+	for(i=0;i<n;i++)
+		m[i]=new int [n];
+	for(i=0;i<n;i++)
+		for(j=0;j<n;j++)
+			m[i][j]=0;
+	if(ch=='d'){
+		for(i=0;i<n;i++)
+			for(j=0;j<n;j++)
+				m[i][j]=s[i][j]+v[i][j];
+	}
+	else{
+		for(i=0;i<n;i++)
+			for(j=0;j<n;j++)
+				m[i][j]=s[i][j]-v[i][j];
+	}
+	return m;
+
 }

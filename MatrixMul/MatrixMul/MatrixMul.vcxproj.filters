@@ -19,4 +19,18 @@
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="razm.txt">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="m1.txt">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="m2.txt">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="result.txt">
+      <Filter>Resource Files</Filter>
+    </None>
+  </ItemGroup>
 </Project>
